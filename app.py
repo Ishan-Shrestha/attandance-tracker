@@ -6,6 +6,7 @@ from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 import logging
 import os   
+from datetime import datetime
 
 # LOGGER CONFIGURATION SETTING
 logging.basicConfig(
@@ -67,6 +68,7 @@ def load_user(user_id):
 
 # 2. SEE ATTANDANCE
 def load_attandance():
+    data = []
     try:
         if current_user.role == 'teacher':
             data = db.session.execute(db.select(Attandance).where(Attandance.teacher_id == current_user.id)).scalars().all()
@@ -164,24 +166,39 @@ def logout():
 @app.route('/teacher', methods=['GET','POST'])
 @login_required
 def teacher():
-    if current_user.role!='teacher':
+    if current_user.role != 'teacher':
         return redirect('/student')
-    data = load_attandance()
+    students = db.session.execute(db.select(User).where(User.role == 'student')).scalars().all()
+    
     if request.method == 'POST':
-        date = request.form.get('date','').strip()
-        teacher_id = current_user.id
-        student_id = request.form.get('student_id','').strip()
-        status = request.form.get('status','').strip()
-        mark_attandance(date, teacher_id, student_id, status)
+        date = datetime.strptime(request.form.get('date', '').strip(), '%Y-%m-%d').date()        
+        for student in students:
+            status = request.form.get(f'status_{student.id}', 'absent')
+            mark_attandance(date, current_user.id, student.id, status)
         return redirect('/teacher')
-    return render_template('teacher_dashboard.html',data = data)
+    
+    data = load_attandance()
+    dates = sorted(set(record.date for record in data))
+    attendance_map = {}
+    for record in data:
+        if record.student_id not in attendance_map:
+            attendance_map[record.student_id] = {}
+        attendance_map[record.student_id][record.date] = record.status
+    return render_template('teacher_dashboard.html', data=data, students=students, dates=dates, attendance_map=attendance_map)
 
 # 6. STUDENT ROUTE
 @app.route('/student')
 @login_required
 def student():
     data = load_attandance()
-    return render_template('student_dashboard.html', data=data)
+    dates = sorted(set(record.date for record in data))
+    attendance_map = {}
+    for record in data:
+        if record.student_id not in attendance_map:
+            attendance_map[record.student_id] = {}
+        attendance_map[record.student_id][record.date] = record.status
+    teacher_map = {record.date: record.teacher_id for record in data}
+    return render_template('student_dashboard.html', data=data, dates=dates, attendance_map=attendance_map, teacher_map=teacher_map)
 
 # APP START
 if __name__ == '__main__':

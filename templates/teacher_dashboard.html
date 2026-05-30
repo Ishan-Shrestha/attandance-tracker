@@ -7,6 +7,89 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> 
 </head>
 <body class="p-4">
-    
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="m-0">Your tasks!</h1>
+        <a href="/logout" class="btn btn-outline-danger">Logout</a>
+    </div>
+
+    <form action="/teacher" method="post" id="form-input" class="mb-5">
+        <div class="form-group row mb-3 align-items-center">
+            <label for="date" class="col-sm-2 col-form-label">Date:</label>
+            <div class="col-sm-10">
+                <input type="date" name="date" placeholder="Enter Your Date" class="form-control" id="date">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+        <table class="table table-sm table-striped table-hover table-bordered align-middle" style="--bs-border-color: #444;">
+            <thead>
+                <tr>
+                    <th scope="col" style="width: 20%">#</th>
+                    <th scope="col" style="width: 60%">Student ID</th>
+                    <th scope="col" style="width: 20%">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in students %}
+                <tr>
+                    <th scope="row">{{ record.id }}</th>
+                    <td>{{ record.id }}</td>
+                    <td>
+                        <fieldset class="form-group mb-3">
+                            <div class="row align-items-center">
+                                <legend class="col-form-label col-sm-2 pt-0">Status:</legend>
+                                <div class="col-sm-10">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="status_{{record.id}}" id="present" value="present" checked>
+                                        <label class="form-check-label" for="present">Present</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="status_{{record.id}}" id="absent" value="absent">
+                                        <label class="form-check-label" for="absent">Absent</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-3">No Student found! Add one above.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <button type="submit" class="btn btn-danger btn-sm">Done</button>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-sm table-striped table-hover table-bordered align-middle" style="--bs-border-color: #444;">
+            <thead>
+                <tr>
+                    <th scope="col" style="width: 10%">#</th>
+                {% for date in dates %}
+                    <th scope="col" style="width: 50%">{{ date }}</th>
+                {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <th scope="row">{{ student.id }}</th>
+                    {% for date in dates %}
+                    <td>{{ attendance_map.get(student.id, {}).get(date, '-') }}</td>
+                    {% endfor %}
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-3">No tasks found! Add one above.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
 </body>
 </html>
